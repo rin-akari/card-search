@@ -133,24 +133,19 @@ for (const row of data) {
         console.log(`⚠️ 未找到图片: ${artist} - ${cn_name}`);
         foundImage = `https://picsum.photos/id/${id % 80 + 10}/300/400`;
     }
-    
     cards.push({
-        id: id++,
-        official_id: artist,
-        jp_name: cn_name,
-        cn_name: cn_name,
-        cn_effect: cleanEffect,
-        cost: '',
-        color: color,
-        card_type: cardType,
-        rarity: rarity || '普通',
-        image_url: foundImage,
-        tags: tags,
-        artist: artist_name,
-        series: series,
-        subtype: subtype
+    id: id++,
+    official_id: artist,
+    cn_name: cn_name,
+    cn_effect: cleanEffect,
+    color: color,
+    card_type: cardType,
+    rarity: rarity || '普通',
+    series: series,
+    subtype: subtype
+    // 去掉 image_url, tags, artist, jp_name, cost 等大字段
     });
-}
+    }
 
 // 保存为 JSON
 fs.writeFileSync('cards.json', JSON.stringify(cards, null, 2));
