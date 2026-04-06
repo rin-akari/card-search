@@ -36,7 +36,6 @@ function extractSeriesAndSubtype(code) {
     
     // prm系列：格式 prmX-数字 或 prm-数字
     if (code.startsWith('prm')) {
-        // 格式 prmX-数字（X是子类别字母）
         const match1 = code.match(/^prm([A-Z])-/);
         if (match1) {
             const subTypeLetter = match1[1];
@@ -45,7 +44,6 @@ function extractSeriesAndSubtype(code) {
                 subtype: subtypeNameMap[subTypeLetter] || subTypeLetter
             };
         }
-        // 格式 prm-数字（没有子类别字母）
         const match2 = code.match(/^prm-/);
         if (match2) {
             return {
@@ -114,38 +112,26 @@ for (const row of data) {
     // 清理效果文本
     let cleanEffect = effect ? effect.replace(/"/g, '') : '';
     
-    // 查找图片（按 Artist 列匹配）
-    let foundImage = '';
-    const extensions = ['.jpg', '.png', '.webp', '.jpeg', '.JPG', '.PNG'];
+    // 图片 URL（按 Artist 列匹配）
+    const image_url = `/images/${artist}.png`;
     
-    if (artist) {
-        let imageName = artist.replace(/[\\/:*?"<>|]/g, '');
-        for (const ext of extensions) {
-            const imgPath = path.join(__dirname, 'public', 'images', `${imageName}${ext}`);
-            if (fs.existsSync(imgPath)) {
-                foundImage = `/images/${imageName}${ext}`;
-                break;
-            }
-        }
-    }
-    
-    if (!foundImage) {
-        console.log(`⚠️ 未找到图片: ${artist} - ${cn_name}`);
-        foundImage = `https://picsum.photos/id/${id % 80 + 10}/300/400`;
-    }
     cards.push({
-    id: id++,
-    official_id: artist,
-    cn_name: cn_name,
-    cn_effect: cleanEffect,
-    color: color,
-    card_type: cardType,
-    rarity: rarity || '普通',
-    series: series,
-    subtype: subtype
-    // 去掉 image_url, tags, artist, jp_name, cost 等大字段
+        id: id++,
+        official_id: artist,
+        jp_name: cn_name,
+        cn_name: cn_name,
+        cn_effect: cleanEffect,
+        cost: '',
+        color: color,
+        card_type: cardType,
+        rarity: rarity || '普通',
+        image_url: image_url,
+        tags: tags,
+        artist: artist_name,
+        series: series,
+        subtype: subtype
     });
-    }
+}
 
 // 保存为 JSON
 fs.writeFileSync('cards.json', JSON.stringify(cards, null, 2));

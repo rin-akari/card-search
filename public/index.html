@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>KCG卡查</title>
+    <title>卡牌查询 - 卡组导入工具</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: #f5f7fb; padding: 20px; }
@@ -25,48 +25,66 @@
         .filter-group select, .filter-group input { background: transparent; border: none; padding: 8px 4px; font-size: 0.9rem; outline: none; cursor: pointer; }
         .filter-group input { width: 100px; }
         
-        /* 卡牌网格 - 一行5张 */
+        /* 导入面板 */
+        .import-panel { background: white; border-radius: 24px; padding: 24px; margin-bottom: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .import-panel h3 { margin-bottom: 12px; color: #1a2a6c; }
+        .import-panel textarea { width: 100%; padding: 16px; border-radius: 16px; border: 1px solid #ddd; font-family: monospace; font-size: 14px; resize: vertical; }
+        .import-buttons { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+        .btn { padding: 10px 24px; border: none; border-radius: 40px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-primary { background: #1a2a6c; color: white; }
+        .btn-primary:hover { background: #2a3a7c; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover { background: #218838; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #5a6268; }
+        .import-result { margin-top: 16px; padding: 16px; background: #f8fafc; border-radius: 16px; max-height: 400px; overflow-y: auto; font-size: 13px; }
+        .card-preview { display: inline-block; margin: 4px; text-align: center; width: 80px; }
+        .card-preview img { width: 100%; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .card-preview span { display: block; font-size: 10px; overflow: hidden; text-overflow: ellipsis; }
+        
+        /* 卡牌网格 */
         .card-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-top: 20px; }
+        .card-item { position: relative; cursor: pointer; transition: transform 0.2s; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .card-item:hover { transform: translateY(-5px); }
+        .card-img { width: 100%; aspect-ratio: 2.5 / 3.5; object-fit: cover; display: block; background: #e9ecef; }
         
-        /* 卡牌图片 */
-        .card-img { width: 100%; aspect-ratio: 2.5 / 3.5; object-fit: cover; display: block; background: #e9ecef; border-radius: 12px; }
-        
-        .card-item { position: relative; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .card-item:hover { transform: translateY(-5px); box-shadow: 0 12px 24px rgba(0,0,0,0.15); }
-        
-        /* 响应式 */
         @media (max-width: 1200px) { .card-grid { grid-template-columns: repeat(4, 1fr); } }
         @media (max-width: 900px) { .card-grid { grid-template-columns: repeat(3, 1fr); } }
         @media (max-width: 600px) { .card-grid { grid-template-columns: repeat(2, 1fr); } }
         
-        /* 模态框 - 横向布局 */
+        /* 模态框 */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
         .modal-content { background: white; border-radius: 24px; max-width: 900px; width: 90%; max-height: 85vh; overflow: hidden; position: relative; display: flex; flex-direction: row; }
-        .modal-img { width: 40%; object-fit: cover; border-radius: 24px 0 0 24px; background: #e9ecef; }
+        .modal-img { width: 40%; object-fit: cover; border-radius: 24px 0 0 24px; }
         .modal-body { width: 60%; padding: 24px; overflow-y: auto; max-height: 85vh; }
-        .close { position: absolute; top: 16px; right: 20px; font-size: 28px; cursor: pointer; color: white; background: rgba(0,0,0,0.5); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s; z-index: 10; }
-        .close:hover { background: rgba(0,0,0,0.8); }
-        .effect-text { background: #f8fafc; padding: 16px; border-radius: 20px; margin: 16px 0; line-height: 1.6; font-size: 14px; white-space: pre-wrap; max-height: 200px; overflow-y: auto; }
-        .detail-row { margin-bottom: 8px; font-size: 14px; }
-        .detail-row strong { color: #475569; }
-        
-        /* 手机端适配 */
-        @media (max-width: 640px) {
-            .modal-content { flex-direction: column; max-width: 95%; }
-            .modal-img { width: 100%; border-radius: 24px 24px 0 0; max-height: 40vh; object-fit: contain; background: #1a1a2e; }
-            .modal-body { width: 100%; padding: 20px; }
-            .effect-text { max-height: 150px; }
-        }
+        .close { position: absolute; top: 16px; right: 20px; font-size: 28px; cursor: pointer; color: white; background: rgba(0,0,0,0.5); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10; }
+        .effect-text { background: #f8fafc; padding: 16px; border-radius: 20px; margin: 16px 0; white-space: pre-wrap; line-height: 1.5; font-size: 14px; }
+        @media (max-width: 640px) { .modal-content { flex-direction: column; } .modal-img { width: 100%; border-radius: 24px 24px 0 0; } .modal-body { width: 100%; } }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="hero">
-        <h1>🃏 KCG卡查</h1>
-        <p>搜索卡名 · 编号</p>
+        <h1>🃏 卡牌查询</h1>
+        <p>搜索卡名 · 效果 · 编号</p>
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="输入卡名或编号..." autocomplete="off">
+            <input type="text" id="searchInput" placeholder="输入卡名、效果或编号..." autocomplete="off">
             <button id="searchBtn">搜索</button>
+        </div>
+    </div>
+
+    <!-- 卡组导入面板 -->
+    <div class="import-panel">
+        <h3>📦 卡组导入工具</h3>
+        <p>输入卡牌编号，用 <code>/</code> 分隔（如 <code>AA-1/AA-2/AM-1</code>）</p>
+        <textarea id="deckInput" rows="4" placeholder="AA-1&#10;AA-2&#10;AM-1"></textarea>
+        <div class="import-buttons">
+            <button id="importBtn" class="btn btn-primary">🔍 查询卡牌</button>
+            <button id="copyJsonBtn" class="btn btn-success">📋 复制 JSON（用于桌游模拟器）</button>
+            <button id="clearBtn" class="btn btn-secondary">🗑 清空</button>
+        </div>
+        <div id="importResult" class="import-result">
+            等待输入...
         </div>
     </div>
 
@@ -81,7 +99,7 @@
     <div id="results" class="card-grid">加载中...</div>
 </div>
 
-<!-- 详情弹窗（横向布局） -->
+<!-- 详情弹窗 -->
 <div id="modal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>
@@ -110,6 +128,13 @@
     const subtypeFilter = document.getElementById('subtypeFilter');
     const modal = document.getElementById('modal');
     
+    // 导入面板元素
+    const deckInput = document.getElementById('deckInput');
+    const importBtn = document.getElementById('importBtn');
+    const copyJsonBtn = document.getElementById('copyJsonBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const importResult = document.getElementById('importResult');
+    
     // 当前筛选条件
     let currentFilters = {
         q: '',
@@ -119,6 +144,9 @@
         series: 'all',
         subtype: 'all'
     };
+    
+    // 当前查询到的卡牌（用于复制 JSON）
+    let currentCards = [];
     
     // 加载筛选选项
     async function loadFilters() {
@@ -147,7 +175,7 @@
         });
     }
     
-    // 搜索
+    // 搜索卡牌
     async function search() {
         const params = new URLSearchParams(currentFilters);
         resultsDiv.innerHTML = '<div style="text-align:center; padding:40px;">🔍 搜索中...</div>';
@@ -161,7 +189,6 @@
                 return;
             }
             
-            // 只显示图片
             resultsDiv.innerHTML = data.cards.map(card => `
                 <div class="card-item" onclick="showDetail(${card.id})">
                     <img class="card-img" src="${card.image_url}" loading="lazy" alt="${escapeHtml(card.cn_name)}">
@@ -169,7 +196,7 @@
             `).join('');
         } catch(e) {
             console.error('搜索失败:', e);
-            resultsDiv.innerHTML = '<div style="text-align:center; padding:40px;">❌ 加载失败，请重试</div>';
+            resultsDiv.innerHTML = '<div style="text-align:center; padding:40px;">❌ 加载失败</div>';
         }
     }
     
@@ -194,6 +221,120 @@
         } catch(e) {
             console.error('加载详情失败:', e);
         }
+    }
+    
+    // ========== 卡组导入功能 ==========
+    
+    // 解析输入（支持 / 分隔和换行分隔）
+    function parseDeckInput(input) {
+        if (input.includes('/')) {
+            return input.split('/').map(s => s.trim()).filter(s => s);
+        } else {
+            return input.split(/\r?\n/).map(s => s.trim()).filter(s => s);
+        }
+    }
+    
+    // 查询卡牌
+    async function queryDeck() {
+        const rawInput = deckInput.value.trim();
+        if (!rawInput) {
+            importResult.innerHTML = '⚠️ 请输入卡牌编号';
+            return;
+        }
+        
+        const codes = parseDeckInput(rawInput);
+        importResult.innerHTML = '🔍 正在查询...';
+        
+        try {
+            const res = await fetch('/api/deck/import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ codes })
+            });
+            const data = await res.json();
+            currentCards = data.cards || [];
+            
+            if (data.notFound && data.notFound.length > 0) {
+                importResult.innerHTML = `<div style="color: #856404; background: #fff3cd; padding: 12px; border-radius: 12px; margin-bottom: 12px;">
+                    ⚠️ 未找到 ${data.notFound.length} 张卡牌: ${data.notFound.join(', ')}
+                </div>`;
+            } else {
+                importResult.innerHTML = '';
+            }
+            
+            if (currentCards.length === 0) {
+                importResult.innerHTML += '<div style="color: #721c24; background: #f8d7da; padding: 12px; border-radius: 12px;">❌ 没有找到任何卡牌</div>';
+                return;
+            }
+            
+            // 显示卡牌预览
+            let previewHtml = `<div style="margin-bottom: 12px;">✅ 找到 ${currentCards.length} 张卡牌：</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">`;
+            
+            for (const card of currentCards.slice(0, 20)) {
+                previewHtml += `
+                    <div class="card-preview">
+                        <img src="${card.image_url}" alt="${card.name}" onerror="this.src='https://via.placeholder.com/80x107?text=No+Image'">
+                        <span>${escapeHtml(card.name)}</span>
+                    </div>
+                `;
+            }
+            
+            if (currentCards.length > 20) {
+                previewHtml += `<div>... 还有 ${currentCards.length - 20} 张</div>`;
+            }
+            previewHtml += `</div>`;
+            
+            importResult.innerHTML += previewHtml;
+            
+        } catch(e) {
+            console.error('查询失败:', e);
+            importResult.innerHTML = '<div style="color: #721c24; background: #f8d7da; padding: 12px; border-radius: 12px;">❌ 查询失败，请检查网络</div>';
+        }
+    }
+    
+    // 复制 JSON 格式（用于桌游模拟器）
+    function copyJsonForTTS() {
+        if (currentCards.length === 0) {
+            alert('请先点击"查询卡牌"');
+            return;
+        }
+        
+        // 生成 TTS 可用的 JSON 格式
+        const ttsData = currentCards.map(card => ({
+            Name: "Card",
+            Nickname: card.name,
+            Description: card.effect,
+            CustomDeck: {
+                "1": {
+                    FaceURL: card.image_url,
+                    BackURL: card.image_url,
+                    NumWidth: 1,
+                    NumHeight: 1,
+                    BackIsHidden: true,
+                    UniqueBack: false,
+                    Type: 0
+                }
+            },
+            CardID: 1,
+            SidewaysCard: false
+        }));
+        
+        const jsonStr = JSON.stringify(ttsData, null, 2);
+        
+        // 复制到剪贴板
+        navigator.clipboard.writeText(jsonStr).then(() => {
+            alert(`✅ 已复制 ${currentCards.length} 张卡牌的 JSON 到剪贴板！\n\n在桌游模拟器中可以使用脚本读取这个数据。`);
+        }).catch(() => {
+            alert('复制失败，请手动复制');
+        });
+    }
+    
+    // 清空输入
+    function clearDeckInput() {
+        deckInput.value = '';
+        importResult.innerHTML = '等待输入...';
+        currentCards = [];
     }
     
     // 事件监听
@@ -234,7 +375,10 @@
         search();
     };
     
-    // 关闭模态框
+    importBtn.onclick = queryDeck;
+    copyJsonBtn.onclick = copyJsonForTTS;
+    clearBtn.onclick = clearDeckInput;
+    
     document.querySelector('.close').onclick = () => {
         modal.style.display = 'none';
     };
